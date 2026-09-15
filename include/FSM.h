@@ -6,8 +6,8 @@
 /**
  * Полностью определённый детерминированный автомат Мили.
  *
- * Входной и выходной алфавиты: {0, 1}. Код состояния имеет 2^M бит,
- * поэтому число состояний N = 2^(2^M); они нумеруются от 0 до N - 1.
+ * Входной и выходной алфавиты: {0, 1}. Код состояния имеет M бит,
+ * поэтому число состояний N = 2^M; они нумеруются от 0 до N - 1.
  *
  * Для каждого состояния q заданы четыре значения:
  *   g0[q], f0[q] — следующее состояние и выход при входе 0;
@@ -29,7 +29,7 @@ public:
 
     /**
      * Создаёт автомат из полных таблиц функций.
-     * Каждый из четырёх векторов обязан содержать N = 2^(2^M) элементов.
+    * Каждый из четырёх векторов обязан содержать N = 2^M элементов.
      * Все номера в g0 и g1 должны быть в диапазоне [0, N).
      */
     FSM(std::size_t m,
@@ -47,6 +47,7 @@ public:
     std::vector<Bit> ProcessWord(const std::vector<Bit>& input);
 
     void reset() noexcept;
+    void output() noexcept;
 
      std::size_t GetM() const noexcept;
      StateNumber GetStateCount() const noexcept;
@@ -56,6 +57,9 @@ public:
      const std::vector<StateNumber>& Getg1() const noexcept;
      const std::vector<Bit>& Getf0() const noexcept;
      const std::vector<Bit>& Getf1() const noexcept;
+
+     const Bit Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept;
+     const Bit Get_bit_from_currentState_by_input(Bit input) const noexcept;
 
 private:
     static StateNumber calculateStateCount(std::size_t m);
@@ -72,13 +76,16 @@ private:
 };
 
 /*
-Пример для M = 1: N = 2^(2^1) = 4 состояния, пронумерованные 0..3.
+Пример для M = 2: N = 2^2 = 4 состояния, пронумерованные 0..3.
 
 std::vector<FSM::StateNumber> g0{0, 2, 1, 3}; // Переходы при входе 0.
 std::vector<FSM::StateNumber> g1{1, 3, 0, 2}; // Переходы при входе 1.
 std::vector<FSM::Bit> f0{0, 0, 1, 1};         // Выходы при входе 0.
 std::vector<FSM::Bit> f1{1, 1, 0, 0};         // Выходы при входе 1.
-FSM fsm(1, g0, g1, f0, f1);
+FSM fsm(2, g0, g1, f0, f1);
 
 fsm.process(1); // Из q=0: output=f1[0]=1, новое q=g1[0]=1.
 */
+
+
+#endif // FSM_H
