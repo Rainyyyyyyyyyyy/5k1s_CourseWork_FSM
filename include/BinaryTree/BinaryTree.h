@@ -11,13 +11,18 @@ struct Node
     Node *left;
     Node *right;
     Node *back;
+    bool chet = false;  // чётность: true - нечётная, false - чётная
     Node(FSM::StateNumber s) : state(s), left(nullptr), right(nullptr), back(nullptr) {}
     Node() : state(0), left(nullptr), right(nullptr), back(nullptr) {}
 };
 
 template<typename T>
-void DeletePartOfTree(Node<T> &node) noexcept;
+void DeletePartOfTree(Node<T> *node) noexcept;
 
+
+// удаление ветви дерева от листа вверх, до узла с двумя потомками (или до корня, если такового нет)
+template <typename T>
+void DeleteFromLeafToUp(Node<T> *node);
 
 class Tree
 {

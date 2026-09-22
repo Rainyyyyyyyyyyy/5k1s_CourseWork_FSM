@@ -88,4 +88,3 @@ fsm.process(1); // Из q=0: output=f1[0]=1, новое q=g1[0]=1.
 */
 
 
-#endif // FSM_H
