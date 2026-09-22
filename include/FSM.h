@@ -16,12 +16,14 @@
  * То есть g0[q] = delta(q, 0), f0[q] = lambda(q, 0),
  *          g1[q] = delta(q, 1), f1[q] = lambda(q, 1).
  */
-class FSM {
+class FSM
+{
 public:
     using Bit = bool;
     using StateNumber = std::size_t;
 
-    struct StepResult {
+    struct StepResult
+    {
         StateNumber previousState;
         StateNumber currentState;
         Bit output;
@@ -29,7 +31,7 @@ public:
 
     /**
      * Создаёт автомат из полных таблиц функций.
-    * Каждый из четырёх векторов обязан содержать N = 2^M элементов.
+     * Каждый из четырёх векторов обязан содержать N = 2^M элементов.
      * Все номера в g0 и g1 должны быть в диапазоне [0, N).
      */
     FSM(std::size_t m,
@@ -42,28 +44,41 @@ public:
      * При input == 0 используются g0 и f0, при input == 1 — g1 и f1.
      */
     StepResult Step(Bit input);
+    void StepFast(Bit input);
 
     /** Обрабатывает входное слово и возвращает выходное слово той же длины. */
-    std::vector<Bit> ProcessWord(const std::vector<Bit>& input);
+    std::vector<Bit> ProcessWord(const std::vector<Bit> &input);
+
+    /**
+     * Возвращает последовательность z(t) целиком.
+     */
+    std::vector<FSM::Bit> MakeAllPeriodReturnZ(FSM &fsm, std::vector<FSM::Bit> u);
+
+    /*   * ставит генератор в начальное состояние;
+     * Вырабатывает z(t) и возвращает траекторию состояний
+     */
+    std::vector<FSM::StateNumber> MakeAllPeriodReturnY(FSM &fsm, std::vector<FSM::Bit> u);
 
     void reset() noexcept;
     void output() noexcept;
 
-     std::size_t GetM() const noexcept;
-     StateNumber GetStateCount() const noexcept;
-     StateNumber GetCurrentState() const noexcept;
-     StateNumber GetInitialState() const noexcept;
-     const std::vector<StateNumber>& Getg0() const noexcept;
-     const std::vector<StateNumber>& Getg1() const noexcept;
-     const std::vector<Bit>& Getf0() const noexcept;
-     const std::vector<Bit>& Getf1() const noexcept;
+    inline std::size_t GetM() const noexcept;
+    inline StateNumber GetStateCount() const noexcept;
+    inline StateNumber GetCurrentState() const noexcept;
+    inline StateNumber GetInitialState() const noexcept;
+    inline const std::vector<StateNumber> &Getg0() const noexcept;
+    inline const std::vector<StateNumber> &Getg1() const noexcept;
+    inline const std::vector<Bit> &Getf0() const noexcept;
+    inline const std::vector<Bit> &Getf1() const noexcept;
 
-     const Bit Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept;
-     const Bit Get_bit_from_currentState_by_input(Bit input) const noexcept;
+    inline const Bit Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept;
+    inline const StateNumber Get_nextState_from_state_by_input(StateNumber state, Bit input) const noexcept;
+    inline const Bit Get_bit_from_currentState_by_input(Bit input) const noexcept;
+    inline const StateNumber Get_nextState_from_currentState_by_input(Bit input) const noexcept;
 
 private:
-    static StateNumber calculateStateCount(std::size_t m);
-    void validateTransitionTable(const std::vector<StateNumber>& table) const;
+    inline static StateNumber calculateStateCount(std::size_t m);
+    void validateTransitionTable(const std::vector<StateNumber> &table) const;
 
     std::size_t m_;
     StateNumber stateCount_;
@@ -86,5 +101,3 @@ FSM fsm(2, g0, g1, f0, f1);
 
 fsm.process(1); // Из q=0: output=f1[0]=1, новое q=g1[0]=1.
 */
-
-

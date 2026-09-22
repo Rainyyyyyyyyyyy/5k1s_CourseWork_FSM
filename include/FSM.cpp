@@ -48,6 +48,15 @@ FSM::StepResult FSM::Step(Bit input)
     return StepResult{previous, currentState_, f0_[previous]};
 }
 
+void FSM::StepFast(Bit input)
+{
+    const StateNumber previous = currentState_;
+
+    // input == false эквивалентен 0, input == true — 1.
+    currentState_ = input ? g1_[previous] : g0_[previous];
+    return;
+}
+
 std::vector<FSM::Bit> FSM::ProcessWord(const std::vector<Bit> &input)
 {
     std::vector<Bit> output;
@@ -66,7 +75,7 @@ void FSM::reset() noexcept
 
 void FSM::output() noexcept
 {
-    //std::cout << '\t';
+    // std::cout << '\t';
     for (std::size_t i = 0; i < stateCount_; ++i)
     {
         std::cout << '\t' << i;
@@ -102,50 +111,50 @@ void FSM::output() noexcept
         std::cout << '\t' << f1_[i];
     }
     std::cout << '\n';
-    std::cout<<"Current state: "<<currentState_<<'\n';    
+    std::cout << "Current state: " << currentState_ << '\n';
 }
 
-std::size_t FSM::GetM() const noexcept
+inline std::size_t FSM::GetM() const noexcept
 {
     return m_;
 }
 
-FSM::StateNumber FSM::GetStateCount() const noexcept
+inline FSM::StateNumber FSM::GetStateCount() const noexcept
 {
     return stateCount_;
 }
 
-FSM::StateNumber FSM::GetCurrentState() const noexcept
+inline FSM::StateNumber FSM::GetCurrentState() const noexcept
 {
     return currentState_;
 }
 
-FSM::StateNumber FSM::GetInitialState() const noexcept
+inline FSM::StateNumber FSM::GetInitialState() const noexcept
 {
     return initialState_;
 }
 
-const std::vector<FSM::StateNumber> &FSM::Getg0() const noexcept
+inline const std::vector<FSM::StateNumber> &FSM::Getg0() const noexcept
 {
     return g0_;
 }
 
-const std::vector<FSM::StateNumber> &FSM::Getg1() const noexcept
+inline const std::vector<FSM::StateNumber> &FSM::Getg1() const noexcept
 {
     return g1_;
 }
 
-const std::vector<FSM::Bit> &FSM::Getf0() const noexcept
+inline const std::vector<FSM::Bit> &FSM::Getf0() const noexcept
 {
     return f0_;
 }
 
-const std::vector<FSM::Bit> &FSM::Getf1() const noexcept
+inline const std::vector<FSM::Bit> &FSM::Getf1() const noexcept
 {
     return f1_;
 }
 
-FSM::StateNumber FSM::calculateStateCount(std::size_t m)
+inline FSM::StateNumber FSM::calculateStateCount(std::size_t m)
 {
     constexpr std::size_t sizeBits = std::numeric_limits<StateNumber>::digits;
     if (m >= sizeBits)
@@ -167,10 +176,64 @@ void FSM::validateTransitionTable(const std::vector<StateNumber> &table) const
     }
 }
 
-
-const FSM::Bit FSM::Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept{
+inline const FSM::Bit FSM::Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept
+{
     return input ? f1_[state] : f0_[state];
 }
-const FSM::Bit FSM::Get_bit_from_currentState_by_input(Bit input) const noexcept{
+inline const FSM::Bit FSM::Get_bit_from_currentState_by_input(Bit input) const noexcept
+{
     return input ? f1_[currentState_] : f0_[currentState_];
+}
+inline const FSM::StateNumber FSM::Get_nextState_from_state_by_input(StateNumber state, Bit input) const noexcept{
+    return input ? g1_[state] : g0_[state];
+}
+inline const FSM::StateNumber FSM::Get_nextState_from_currentState_by_input(Bit input) const noexcept{
+    return input ? g1_[currentState_] : g0_[currentState_];
+}
+
+/*   * ставит генератор в начальное состояние;
+ * Вырабатывает и возвращает последовательность z(t) целиком.
+ */
+std::vector<FSM::Bit> FSM::MakeAllPeriodReturnZ(FSM &fsm, std::vector<FSM::Bit> u)
+{
+    // size_t n = u.size();
+    size_t n_mask = u.size() - 1;
+    // size_t m = fsm.GetM();
+    size_t m_mask = ((size_t)1 << fsm.GetM()) - 1;
+    std::vector<FSM::Bit> z;
+    size_t MN = (size_t)1 << (u.size() + fsm.GetM());
+    z.reserve(MN);
+    fsm.reset();
+
+    for (size_t i = 0; i < MN; i++)
+    {
+        z.push_back(fsm.Get_bit_from_currentState_by_input(u[i & n_mask]));
+        fsm.StepFast(u[i & n_mask]);
+    }
+
+    return z;
+}
+
+
+/*   * ставит генератор в начальное состояние;
+ * Вырабатывает z(t) и возвращает траекторию состояний
+ */
+std::vector<FSM::StateNumber> FSM::MakeAllPeriodReturnY(FSM &fsm, std::vector<FSM::Bit> u)
+{
+    // size_t n = u.size();
+    size_t n_mask = u.size() - 1;
+    // size_t m = fsm.GetM();
+    size_t m_mask = ((size_t)1 << fsm.GetM()) - 1;
+    std::vector<FSM::StateNumber> Y;
+    size_t MN = (size_t)1 << (u.size() + fsm.GetM());
+    Y.reserve(MN);
+    fsm.reset();
+
+    for (size_t i = 0; i < MN; i++)
+    {
+        Y.push_back(fsm.Get_nextState_from_currentState_by_input(u[i & n_mask]));
+        fsm.StepFast(u[i & n_mask]);
+    }
+
+    return Y;
 }
