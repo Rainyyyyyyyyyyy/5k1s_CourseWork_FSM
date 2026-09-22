@@ -1,8 +1,9 @@
 #pragma once
 
 #include "FSM.h"
-#include "BinaryTree.h"
 #include <utility>
+#include <iostream>
+#include <string>
 
 template <typename T>
 struct Node
@@ -17,12 +18,72 @@ struct Node
 };
 
 template<typename T>
-void DeletePartOfTree(Node<T> *node) noexcept;
+void DeletePartOfTree(Node<T> *node) noexcept
+{
+    if (node == nullptr)
+        return;
 
+    if (node->left != nullptr)
+    {
+        DeletePartOfTree(node->left);
+        delete node->left;
+        node->left = nullptr;
+    }
+
+    if (node->right != nullptr)
+    {
+        DeletePartOfTree(node->right);
+        delete node->right;
+        node->right = nullptr;
+    }
+
+    node->back = nullptr;
+    delete node;
+}
 
 // удаление ветви дерева от листа вверх, до узла с двумя потомками (или до корня, если такового нет)
 template <typename T>
-void DeleteFromLeafToUp(Node<T> *node);
+void DeleteFromLeafToUp(Node<T> *node)
+{
+    if (node == nullptr)
+        return;
+
+    Node<T> *parent = node->back;
+
+    if (parent == nullptr)
+        return;
+
+    if (parent->left == node)
+        parent->left = nullptr;
+    else if (parent->right == node)
+        parent->right = nullptr;
+
+    node->left = nullptr;
+    node->right = nullptr;
+    node->back = nullptr;
+    delete node;
+
+    if (parent->left != nullptr && parent->right != nullptr)
+        return;
+
+    DeleteFromLeafToUp(parent);
+}
+
+template <typename T>
+void PrintTree(Node<T> *node, const unsigned int &shift = 2, unsigned int level = 0)
+{
+    if (node == nullptr)
+        return;
+
+    if (node->right != nullptr)
+        PrintTree(node->right, shift, level + 1);
+
+    std::cout << std::string(level * shift, ' ');
+    std::cout << node->state << '\n';
+
+    if (node->left != nullptr)
+        PrintTree(node->left, shift, level + 1);
+}
 
 class Tree
 {
@@ -45,6 +106,12 @@ public:
 
     Node<FSM::StateNumber> *GetRoot() const noexcept { return root; }
     FSM::StateNumber GetRootState() const noexcept { return root->state; }
+
+    // проходит дерево вглубь и записывает значения листьев в leaves
     void GetLeaves(Node<FSM::StateNumber> *node, std::vector<FSM::StateNumber> &leaves) const;
+
 };
 
+
+// публичный безклассовый метод удаления дерева
+void DestroyTree(Node<FSM::StateNumber> *root) noexcept;
