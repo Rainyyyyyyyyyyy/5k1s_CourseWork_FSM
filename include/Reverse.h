@@ -61,6 +61,11 @@ void Reverse_first_2powN(const std::vector<FSM::StateNumber> &g20,
     {
         Reverse_first_2powN(g20, g21, f20, f21, output, N, M, node->right->state, node->right, i + 1);
     }
+    if(node != nullptr){
+        if(node->left == nullptr && node->right == nullptr){
+            DeleteFromLeafToUp(node);
+        }
+    }
 
 }
 
