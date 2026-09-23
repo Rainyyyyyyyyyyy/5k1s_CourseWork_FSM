@@ -3,6 +3,8 @@
 
 
 #include <iostream>
+#include <fstream>
+
 #include "Permutation.h"
 #include "BinaryTree.h"
 #include "Reverse.h"
@@ -10,26 +12,37 @@
 #include <bitset>
 
 
+
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using Bit = FSM::Bit;
 
 int main()
 {
+    #ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);  // Переключаем вывод консоли на UTF-8
+    #endif
 
-    const std::bitset<10> abo_c("1000101001");
-    std::bitset<10> abo;
-    abo = std::bitset<10>("1000101001");
-    abo[5] = 0;
-    std::cout<<abo<<'\t'<<abo.size()<<'\n';
-    std::cout<<abo_c<<'\t'<<abo_c.size()<<'\n';
-    for(size_t i=0; i<abo.size(); i++){
-        std::cout<<abo[i]<<' ';
-    }
-    std::cout<<'\n';
-    for(size_t i=0; i<abo_c.size(); i++){
-        std::cout<<abo_c[i]<<' ';
-    }
-    std::cout<<'\n';
-    return 0;
+    // const std::bitset<10> abo_c("1000101001");
+    // std::bitset<10> abo;
+    // abo = std::bitset<10>("1000101001");
+    // abo[5] = 0;
+    // std::cout<<abo<<'\t'<<abo.size()<<'\n';
+    // std::cout<<abo_c<<'\t'<<abo_c.size()<<'\n';
+    // for(size_t i=0; i<abo.size(); i++){
+    //     std::cout<<abo[i]<<' ';
+    // }
+    // std::cout<<'\n';
+    // for(size_t i=0; i<abo_c.size(); i++){
+    //     std::cout<<abo_c[i]<<' ';
+    // }
+    // std::cout<<'\n';
+    // return 0;
+
+
 
 
     // std::vector<size_t> ggg0 = {1, 2, 3, 4, 5, 6, 7, 0};
@@ -106,8 +119,13 @@ int main()
     root->left = root->right = nullptr;
     root->back = nullptr;
 
-    // Reverse_first_2powN(fsm.Getg0(), fsm.Getg1(), fsm.Getf0(), fsm.Getf1(), z, n, root->state, root);
-    // PrintTree(root);
+    Reverse_first_2powN(fsm.Getg0(), fsm.Getg1(), fsm.Getf0(), fsm.Getf1(), z, n, m, root->state, root);
+    
+
+    std::ofstream out;
+    printTreeToFileDot(root, out);
+
+    printTreeLR(root);
 
     // fsm.ProcessWord({0, 1, 0, 1});
     DestroyTree(root);
