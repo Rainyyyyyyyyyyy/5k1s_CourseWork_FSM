@@ -2,6 +2,11 @@
 
 #include <cstddef>
 #include <vector>
+#include <bitset>
+
+
+#define MAX_M_SIZE_FOR_FSM (size_t)16
+#define MAX_MP_SIZE_FOR_FSM (size_t)1<<MAX_M_SIZE_FOR_FSM
 
 /**
  * Полностью определённый детерминированный автомат Мили.
@@ -36,9 +41,15 @@ public:
      */
     FSM(std::size_t m,
         std::vector<StateNumber> g0, std::vector<StateNumber> g1,
-        std::vector<Bit> f0, std::vector<Bit> f1,
+        std::bitset<MAX_MP_SIZE_FOR_FSM> f0, std::bitset<MAX_MP_SIZE_FOR_FSM> f1,
+        //std::vector<Bit> f0, std::vector<Bit> f1,
         StateNumber initialState = 0);
-
+    FSM(std::size_t m,
+        std::vector<StateNumber> g0, std::vector<StateNumber> g1,
+        std::string f0, std::string f1,
+        //std::vector<Bit> f0, std::vector<Bit> f1,
+        StateNumber initialState = 0);
+    
     /**
      * Выполняет такт для входного бита input.
      * При input == 0 используются g0 и f0, при input == 1 — g1 и f1.
@@ -62,30 +73,42 @@ public:
     void reset() noexcept;
     void output() noexcept;
 
-    inline std::size_t GetM() const noexcept;
-    inline StateNumber GetStateCount() const noexcept;
-    inline StateNumber GetCurrentState() const noexcept;
-    inline StateNumber GetInitialState() const noexcept;
-    inline const std::vector<StateNumber> &Getg0() const noexcept;
-    inline const std::vector<StateNumber> &Getg1() const noexcept;
-    inline const std::vector<Bit> &Getf0() const noexcept;
-    inline const std::vector<Bit> &Getf1() const noexcept;
+    inline std::size_t GetM() const noexcept { return m_; }
+    inline StateNumber GetStateCount() const noexcept { return stateCount_; }
+    inline StateNumber GetCurrentState() const noexcept { return currentState_; }
+    inline StateNumber GetInitialState() const noexcept { return initialState_; }
+    inline const std::vector<StateNumber> &Getg0() const noexcept { return g0_; }
+    inline const std::vector<StateNumber> &Getg1() const noexcept { return g1_; }
+    inline const std::bitset<MAX_MP_SIZE_FOR_FSM> /*std::vector<Bit>*/ &Getf0() const noexcept { return f0_; }
+    inline const std::bitset<MAX_MP_SIZE_FOR_FSM> /*std::vector<Bit>*/ &Getf1() const noexcept { return f1_; }
 
-    inline const Bit Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept;
-    inline const StateNumber Get_nextState_from_state_by_input(StateNumber state, Bit input) const noexcept;
-    inline const Bit Get_bit_from_currentState_by_input(Bit input) const noexcept;
-    inline const StateNumber Get_nextState_from_currentState_by_input(Bit input) const noexcept;
+    inline const Bit Get_bit_from_state_by_input(StateNumber state, Bit input) const noexcept
+    {
+        return input ? f1_[state] : f0_[state];
+    }
+    inline const StateNumber Get_nextState_from_state_by_input(StateNumber state, Bit input) const noexcept
+    {
+        return input ? g1_[state] : g0_[state];
+    }
+    inline const Bit Get_bit_from_currentState_by_input(Bit input) const noexcept
+    {
+        return input ? f1_[currentState_] : f0_[currentState_];
+    }
+    inline const StateNumber Get_nextState_from_currentState_by_input(Bit input) const noexcept
+    {
+        return input ? g1_[currentState_] : g0_[currentState_];
+    }
 
 private:
-    inline static StateNumber calculateStateCount(std::size_t m);
+    static StateNumber calculateStateCount(std::size_t m);
     void validateTransitionTable(const std::vector<StateNumber> &table) const;
 
     std::size_t m_;
     StateNumber stateCount_;
     std::vector<StateNumber> g0_;
     std::vector<StateNumber> g1_;
-    std::vector<Bit> f0_;
-    std::vector<Bit> f1_;
+    std::bitset<MAX_MP_SIZE_FOR_FSM> f0_;   //std::vector<Bit> f0_;
+    std::bitset<MAX_MP_SIZE_FOR_FSM> f1_;   //std::vector<Bit> f1_;
     StateNumber initialState_;
     StateNumber currentState_;
 };
