@@ -11,7 +11,7 @@
 
 #include <bitset>
 
-
+#include "MultiTree.h"
 
 
 #ifdef _WIN32
@@ -63,34 +63,58 @@ int main()
     // return 0;
     // 6, 7, 0, 2, 1, 3, 4, 5
     //          0,1,2,3,4,5,6,7
-    FSM fsm(3, {6,7,0,2,1,3,4,5},//, 8, 9, 10, 11, 12, 13, 14, 15},
-               {4,5,6,0,7,2,1,3},// 8, 9, 10, 11, 12, 13, 14, 15},
+    size_t n, nP, m, mP, MN;//, MNP;
+    
+    size_t m3 = 3; size_t mP3 = (size_t)1<<m3;
+    size_t n3 = 3; size_t nP3 = (size_t)1<<3;
+    size_t MN33 = (size_t)1<<(n3+m3);
+
+    size_t m2 = 2; size_t mP2 = (size_t)1<<m2;
+    size_t n2 = 2; size_t nP2 = (size_t)1<<2;
+    size_t MN22 = (size_t)1<<(n2+m2);
+
+    
+    
+    //
+    // АКТУАЛЬНЫЕ ПАРАМЕТРЫ (ТЕКУЩИЕ)
+    //
+    n = n3; nP = nP3;
+    m = m3; mP = mP3;
+    MN = MN33; //MNP = MNP22;
+
+    
+    //             0 1 2 3 4 5 6 7 
+    FSM fsm33(m3, {6,7,0,2,1,3,4,5},//, 8, 9, 10, 11, 12, 13, 14, 15},
+                  {7,2,1,4,3,6,5,0},//{4,5,6,0,7,2,1,3}, //{4,5,6,0,7,2,1,3},// 8, 9, 10, 11, 12, 13, 14, 15},
                "10000001", //{1, 0, 0, 0, 0, 0, 0, 1},// 1, 1, 0, 0, 0, 1, 1, 1},
-               "10000011");//{1, 0, 0, 0, 0, 0, 1, 1});// 1, 1, 1, 1, 1, 1, 1, 1});
+               "10000000");//{1, 0, 0, 0, 0, 0, 1, 1});// 1, 1, 1, 1, 1, 1, 1, 1});
                std::cout<<"created fsm\n";
+    
+    FSM fsm22(2, {1,2,3,0},
+                 {2,3,0,1},
+                 "1000",
+                 "1100");
 
     FSM fsm1(1, {1,0}, {0,1}, "10", "11");
 
-    size_t m = fsm.GetM(); size_t mP = (size_t)1<<m;
-    size_t n = 3; size_t nP = (size_t)1<<n;
-    size_t MN = (size_t)1<<(n+m);
 
-
-    std::vector<Bit> u = {0,0,1,1,1,0,0,0};//{0,1,1,1};
-    fsm.output();
-
+    std::vector<Bit> u3 = {0,0,1,1,1,0,0,0};//{0,1,1,1};
+    std::vector<Bit> u2 = {0,1,1,1};
+    //fsm33.output();
+    fsm22.output();
     
     std::vector<Bit> z;// = fsm1.ProcessWord(u);
     std::vector<FSM::StateNumber> Y;
-    z = fsm1.MakeAllPeriodReturnZ(fsm, u);
-    Y = fsm1.MakeAllPeriodReturnY(fsm, u);
+    z = fsm33.MakeAllPeriodReturnZ(u3);
+    Y = fsm33.MakeAllPeriodReturnY(u3);
     //z.push_back(fsm1.Get_bit_from_currentState_by_input(0));
     //z.push_back(fsm1.Get_bit_from_currentState_by_input(1));
     //z.push_back(fsm1.Get_bit_from_currentState_by_input(1));
     //z.push_back(fsm1.Get_bit_from_currentState_by_input(1));
 
 
-    for(size_t i=0; i<nP; i++)std::cout<<u[i]<<' ';
+
+    for(size_t i=0; i<nP; i++)std::cout<<u3[i]<<' ';
     std::cout<<'\n';
     for(size_t i=0; i<mP; i++)std::cout<<"- ";
     std::cout<<'\n';
@@ -114,21 +138,58 @@ int main()
         std::cout<<'\n';
     }
 
+
+    //
+    //  Reverse into Binary Tree
+    //
     Node<FSM::StateNumber> *root = new Node<FSM::StateNumber>;
     root->state = 0;
     root->left = root->right = nullptr;
     root->back = nullptr;
 
-    Reverse_first_2powN(fsm.Getg0(), fsm.Getg1(), fsm.Getf0(), fsm.Getf1(), z, n, m, root->state, root);
+    Reverse_first_2powN_To_BinaryTree(fsm33.Getg0(), fsm33.Getg1(),
+                                      fsm33.Getf0(), fsm33.Getf1(),
+                                      z, n, m,
+                                      root->state, root);
     
 
+
     std::ofstream out;
-    printTreeToFileDot(root, out);
+    printTreeToFileDot(root, out, "binary_tree.dot");
+    out.close();
 
     printTreeLR(root);
 
     // fsm.ProcessWord({0, 1, 0, 1});
     DestroyTree(root);
+
+
+
+    //
+    // Reverse into MultiTree
+    //
+    MultiTreeFloors floors;
+    MultiTreeNode8 *rootMulti = GetOrCreateNode(
+        floors,
+        static_cast<MultiTreeFloor>(0),
+        static_cast<MultiTreeKey>(0));
+
+    Reverse_first_2powN_To_MultiTree(
+        fsm33.Getg0(), fsm33.Getg1(),
+        fsm33.Getf0(), fsm33.Getf1(),
+        z, n, m,
+        rootMulti, floors, rootMulti);
+
+    printTreePretty(rootMulti);
+
+    std::ofstream outMulti;
+    printTreeToFileDot(rootMulti, outMulti, "multi_tree.dot");
+    outMulti.close();
+
+    DestroyMultiTree(rootMulti);
+    rootMulti = nullptr;
+    floors.clear();
+
     return 0;
     
 }

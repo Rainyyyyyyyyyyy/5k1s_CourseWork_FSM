@@ -18,7 +18,7 @@ add_library(FSMlib
 
     #../include/BinaryTree/
     include/BinaryTree/BinaryTree.cpp
-
+    include/Multi_Tree/MultiTree.cpp
 
 
     #include/Permutation.cpp
@@ -32,6 +32,8 @@ target_include_directories(FSMlib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryTree
     ${CMAKE_CURRENT_SOURCE_DIR}/include/Permutation
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/Multi_Tree
+    
     
     )
 
@@ -48,3 +50,6 @@ target_link_libraries(FSM FSMlib)
 set_target_properties(FSM PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
+
+# вывести в консоль компилятор
+message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")

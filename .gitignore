@@ -2,3 +2,13 @@
 .vscode/
 
 build/
+
+tree.dot
+
+*.dot
+
+tree.png
+
+BinTrees/
+
+DAGTree/
