@@ -63,12 +63,12 @@ public:
     /**
      * Возвращает последовательность z(t) целиком.
      */
-    std::vector<FSM::Bit> MakeAllPeriodReturnZ(FSM &fsm, std::vector<FSM::Bit> u);
+    std::vector<FSM::Bit> MakeAllPeriodReturnZ(std::vector<FSM::Bit> u);
 
     /*   * ставит генератор в начальное состояние;
      * Вырабатывает z(t) и возвращает траекторию состояний
      */
-    std::vector<FSM::StateNumber> MakeAllPeriodReturnY(FSM &fsm, std::vector<FSM::Bit> u);
+    std::vector<FSM::StateNumber> MakeAllPeriodReturnY(std::vector<FSM::Bit> u);
 
     void reset() noexcept;
     void output() noexcept;

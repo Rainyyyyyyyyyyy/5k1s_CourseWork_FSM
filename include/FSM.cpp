@@ -170,21 +170,19 @@ void FSM::validateTransitionTable(const std::vector<StateNumber> &table) const
 /*   * ставит генератор в начальное состояние;
  * Вырабатывает и возвращает последовательность z(t) целиком.
  */
-std::vector<FSM::Bit> FSM::MakeAllPeriodReturnZ(FSM &fsm, std::vector<FSM::Bit> u)
+std::vector<FSM::Bit> FSM::MakeAllPeriodReturnZ(std::vector<FSM::Bit> u)
 {
-    // size_t n = u.size();
     size_t n_mask = u.size() - 1;
-    // size_t m = fsm.GetM();
-    size_t m_mask = ((size_t)1 << fsm.GetM()) - 1;
+    size_t m_mask = ((size_t)1 << GetM()) - 1;
     std::vector<FSM::Bit> z;
-    size_t MN = (size_t)1 << (u.size() + fsm.GetM());
+    size_t MN = (size_t)1 << (u.size() + GetM());
     z.reserve(MN);
-    fsm.reset();
+    reset();
 
     for (size_t i = 0; i < MN; i++)
     {
-        z.push_back(fsm.Get_bit_from_currentState_by_input(u[i & n_mask]));
-        fsm.StepFast(u[i & n_mask]);
+        z.push_back(Get_bit_from_currentState_by_input(u[i & n_mask]));
+        StepFast(u[i & n_mask]);
     }
 
     return z;
@@ -193,21 +191,19 @@ std::vector<FSM::Bit> FSM::MakeAllPeriodReturnZ(FSM &fsm, std::vector<FSM::Bit> 
 /*   * ставит генератор в начальное состояние;
  * Вырабатывает z(t) и возвращает траекторию состояний
  */
-std::vector<FSM::StateNumber> FSM::MakeAllPeriodReturnY(FSM &fsm, std::vector<FSM::Bit> u)
+std::vector<FSM::StateNumber> FSM::MakeAllPeriodReturnY(std::vector<FSM::Bit> u)
 {
-    // size_t n = u.size();
     size_t n_mask = u.size() - 1;
-    // size_t m = fsm.GetM();
-    size_t m_mask = ((size_t)1 << fsm.GetM()) - 1;
+    size_t m_mask = ((size_t)1 << GetM()) - 1;
     std::vector<FSM::StateNumber> Y;
-    size_t MN = (size_t)1 << (u.size() + fsm.GetM());
+    size_t MN = (size_t)1 << (u.size() + GetM());
     Y.reserve(MN);
-    fsm.reset();
+    reset();
 
     for (size_t i = 0; i < MN; i++)
     {
-        Y.push_back(fsm.Get_nextState_from_currentState_by_input(u[i & n_mask]));
-        fsm.StepFast(u[i & n_mask]);
+        Y.push_back(Get_nextState_from_currentState_by_input(u[i & n_mask]));
+        StepFast(u[i & n_mask]);
     }
 
     return Y;

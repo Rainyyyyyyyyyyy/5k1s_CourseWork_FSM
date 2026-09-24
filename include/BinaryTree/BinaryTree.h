@@ -173,15 +173,18 @@ namespace
 // пишет дерево в текстовый файл tree.dot
 // далее необходимо выполнить dot -Tpng tree.dot -o tree.png
 template <typename T>
-void printTreeToFileDot(Node<T> *root, std::ofstream &out)
+void printTreeToFileDot(Node<T> *root, std::ofstream &out, std::string filename = "BinTree.dot")
 {
-    out.open("tree.dot");
+    out.open(filename);
     out << "digraph Tree {\n";
     out << "    node [shape=circle];\n";
     writeDot(root, out);
     out << "}\n";
     out.close();
 }
+
+
+
 
 class Tree
 {
