@@ -36,6 +36,8 @@ public:
 
     Permut GetInverse() const;
 
+    std::vector<size_t> Get() const { return perm; }
+
     // сброс перестановки до тождественной
     void Reset();
 

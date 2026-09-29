@@ -40,6 +40,13 @@ int main()
     size_t nP2 = (size_t)1 << 2;
     size_t MN22 = (size_t)1 << (n2 + m2);
 
+    // размер m=n=1
+    size_t m1 = 1;
+    size_t mP1 = (size_t)1 << m1;
+    size_t n1 = 1;
+    size_t nP1 = (size_t)1 << 1;
+    size_t MN11 = (size_t)1 << (n1 + m1);
+
     //
     // АКТУАЛЬНЫЕ ПАРАМЕТРЫ (ТЕКУЩИЕ)
     //
@@ -49,14 +56,24 @@ int main()
     mP = mP3;
     MN = MN33; // MNP = MNP22;
 
-    //             0 1 2 3 4 5 6 7
-    FSM fsm33(m3,
-    /*g20*/         {6,7,0,2,1,3,4,5}, //, 8, 9, 10, 11, 12, 13, 14, 15},
-    /*g21*/         {7,2,1,4,3,6,5,0},     //{4,5,6,0,7,2,1,3}, //{4,5,6,0,7,2,1,3},// 8, 9, 10, 11, 12, 13, 14, 15},
-    /*f20*/         "10000001",                   //{1, 0, 0, 0, 0, 0, 0, 1},// 1, 1, 0, 0, 0, 1, 1, 1},
-    /*f21*/         "10000000");                  //{1, 0, 0, 0, 0, 0, 1, 1});// 1, 1, 1, 1, 1, 1, 1, 1});
+    //          0 1 2 3 4 5 6 7
+    Permut g20({2,4,1,6,3,7,5,0});//{3,4,5,6,7,0,1,2});
+    size_t deg = 4;
+    Permut g21 = g20 ^ deg;
+    // g20.Print();
+    // g21.Print();
+    // return 0;
+    FSM fsm33(m3,   // f20, f21 указывать в обратном порядке (f(yN), f(yN-1), ..., f(y1), f(y0) из-за индексации std::bitset
+    /*g20*/         g20.Get(),//{3,4,5,6,7,0,1,2},//{3,2,7,1,5,0,4,6},//{6,7,0,2,1,3,4,5}, //, 8, 9, 10, 11, 12, 13, 14, 15},
+    /*g21*/         g21.Get(),//{6,7,0,1,2,3,4,5},//{7,4,5,6,1,2,3,0},//{7,2,1,4,3,6,5,0},     //{4,5,6,0,7,2,1,3}, //{4,5,6,0,7,2,1,3},// 8, 9, 10, 11, 12, 13, 14, 15},
+    /*f20*/         "00000001",                   //{1, 0, 0, 0, 0, 0, 0, 1},// 1, 1, 0, 0, 0, 1, 1, 1},
+    /*f21*/         "01011001");                  //{1, 0, 0, 0, 0, 0, 1, 1});// 1, 1, 1, 1, 1, 1, 1, 1});
+    // FSM fsm11(m1, g20.Get(),
+    //               g21.Get(),
+    //               "10",
+    //               "00");
     std::cout << "created fsm\n";
-
+    fsm33.output();
     FSM fsm22(2, {1, 2, 3, 0},
               {2, 3, 0, 1},
               "1000",
@@ -64,10 +81,11 @@ int main()
 
     FSM fsm1(1, {1, 0}, {0, 1}, "10", "11");
 
-    std::vector<Bit> u3 = {0, 0, 1, 1, 1, 0, 0, 0}; //{0,1,1,1};
+    std::vector<Bit> u3 = {0, 0, 0, 0, 0, 1, 1, 1}; //{0,1,1,1};
     std::vector<Bit> u2 = {0, 1, 1, 1};
+    std::vector<Bit> u1 = {1, 0};
     // fsm33.output();
-    fsm22.output();
+    //fsm22.output();
 
     std::vector<Bit> z; // = fsm1.ProcessWord(u);
     std::vector<FSM::StateNumber> Y;
@@ -79,13 +97,13 @@ int main()
     ///
     /// Вывод в консоль матриц-траекторий выходов z(t) и состояний y(t)
     ///
-    for (size_t i = 0; i < nP; i++)std::cout << u3[i] << ' ';   std::cout << '\n';
+    for (size_t i = 0; i < nP; i++)std::cout << u3[i] << " ";   std::cout << '\n';
     for (size_t i = 0; i < mP; i++)std::cout << "- ";           std::cout << '\n';
     for (size_t i = 0; i < mP; ++i)
     {
         for (size_t j = 0; j < nP; ++j)
         {
-            std::cout << z[i * nP + j] << ' ';
+            std::cout << z[i * nP + j] << ' ';//'/'<<Y[i * nP + j]<<' ';
         }
         std::cout << '\n';
     }
@@ -126,14 +144,48 @@ int main()
         floors,
         static_cast<MultiTreeFloor>(0),
         static_cast<MultiTreeKey>(0));
+    std::vector<FSM::StateNumber> lastStates;
+    std::vector<std::vector<FSM::Bit>> candidatesU;
+    std::vector<FSM::Bit> currentU;
 
     Reverse_first_2powN_To_MultiTree(
         fsm33.Getg0(), fsm33.Getg1(),
         fsm33.Getf0(), fsm33.Getf1(),
         z, n, m,
-        rootMulti, floors, rootMulti);
+        rootMulti, floors, rootMulti,
+        lastStates, candidatesU, currentU);
+    for(size_t i=0; i<lastStates.size(); ++i)
+    {
+        std::cout<<"lastStates["<<i<<"] = "<<lastStates[i]<<":  u(t) =  ";
+        for(size_t j=0; j<candidatesU[i].size(); ++j)
+        {
+            std::cout<<candidatesU[i][j];
+        }
+        std::cout<<'\n';
+    }
+    std::cout<<'\n';
 
-    printTreePretty(rootMulti);
+    size_t d = CheckCandidatesY_by_z(lastStates, candidatesU, z,
+                         fsm33.Getg0(), fsm33.Getg1(),
+                         fsm33.Getf0(), fsm33.Getf1(),
+                         n, m);
+    std::cout<<"d = "<<d<<'\n';
+    std::cout<<"True u(t): ";
+    if(candidatesU.size() == 0)std::cout<<"|U| = 0"; else
+    for (size_t i=0; i<nP; i++)
+        std::cout << candidatesU[0][i];
+    std::cout<<'\n';
+     for(size_t i=0; i<lastStates.size(); ++i)
+    {
+        std::cout<<"lastStates["<<i<<"] = "<<lastStates[i]<<":  u(t) =  ";
+        for(size_t j=0; j<candidatesU[i].size(); ++j)
+        {
+            std::cout<<candidatesU[i][j];
+        }
+        std::cout<<'\n';
+    }
+    std::cout<<'\n';
+    //printTreePretty(rootMulti);
 
     std::ofstream outMulti;
     printTreeToFileDot(rootMulti, outMulti, "multi_tree.dot");
