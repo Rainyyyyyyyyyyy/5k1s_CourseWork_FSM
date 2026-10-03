@@ -41,7 +41,7 @@ int main(){
                                checkEquals(wf10, wf11, wf20, wf21)==false && 
                                f(wu1, wu2, wf11, wf10, wf21, wf20, n) == 0){
                                 counter++;
-                                //std::cout<<wu1<<"\t"<<wu2<<"\t"<<wf11<<"\t"<<wf10<<"\t"<<wf21<<"\t"<<wf20<<std::endl;
+                                std::cout<<wu1<<"\t"<<wu2<<"\t"<<wf11<<"\t"<<wf10<<"\t"<<wf21<<"\t"<<wf20<<std::endl;
                             }
                         }
                     }

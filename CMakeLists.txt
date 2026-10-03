@@ -38,7 +38,7 @@ target_include_directories(FSMlib PUBLIC
     )
 
 # Создание исполняемого файла
-add_executable(FSM main.cpp) #include/PermutationMain.cpp)
+add_executable(FSM d_statistics/main_d_statistics.cpp) #main_subtask.cpp) #main.cpp) #include/PermutationMain.cpp)
 target_include_directories(FSM PRIVATE lib)
 target_link_libraries(FSM FSMlib)
 
