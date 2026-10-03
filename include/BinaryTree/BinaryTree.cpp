@@ -38,55 +38,17 @@ void Tree::Destroy(Node<FSM::StateNumber> *node) noexcept
     delete node;
 }
 
-//
-//
-//
-//
-//
 
-template <typename T>
-void DeletePartOfTree(Node<T> *node) noexcept
+
+void DestroyTree(Node<FSM::StateNumber> *root) noexcept
 {
-    if (node->left != nullptr)
-    { // слева не пусто
-        DeletePartOfTree(node->left);
-        delete node->left;
-        node->left = nullptr;
-    }
-    if (node->right != nullptr)
-    { // справа не пусто
-        DeletePartOfTree(node->right);
-        delete node->right;
-        node->right = nullptr;
-    }
-    node->back = nullptr;
-    delete node;
+    if (root == nullptr)
+        return;
+    DestroyTree(root->left);
+    DestroyTree(root->right);
+    root->left = root->right = nullptr;
+    root->back = nullptr;
+    delete root;
 }
+//
 
-// удаление ветви дерева от листа вверх, до узла с двумя потомками (или до корня, если такового нет)
-template <typename T>
-void DeleteFromLeafToUp(Node<T> *node)
-{
-
-    if (node == nullptr)
-        return;
-    if (node->back == nullptr)
-    { // если дошли до корня
-        node->left = node->right = nullptr;
-        node->back = nullptr;
-        delete node;
-        return;
-    }
-    if (node->back->left != nullptr && node->back->right != nullptr)
-    { // если у родителя есть два потомка
-        node->left = node->right = nullptr;
-        node->back = nullptr;
-        delete node;
-        return;
-    }
-    Node<T> *parent = node->back;
-    node->left = node->right = nullptr;
-    node->back = nullptr;
-    delete node;
-    DeleteFromLeafToUp(parent);
-}
