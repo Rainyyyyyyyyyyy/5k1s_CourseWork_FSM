@@ -33,35 +33,22 @@ void Tree::Destroy(Node<FSM::StateNumber> *node) noexcept
         return;
     Destroy(node->left);
     Destroy(node->right);
-    delete node;
-}
-
-//
-//
-//
-//
-//
-
-
-template<typename T>
-void DeletePartOfTree(Node<T> &node) noexcept
-{
-    if (node.left != nullptr)
-    {   // слева не пусто
-        DeletePartOfTree(*node.left);
-        delete node.left;
-        node.left = nullptr;
-    }
-    if (node.right != nullptr)
-    {   // справа не пусто
-        DeletePartOfTree(*node.right);
-        delete node.right;
-        node.right = nullptr;
-    }
+    node->left = node->right = nullptr;
     node->back = nullptr;
     delete node;
 }
 
 
 
+void DestroyTree(Node<FSM::StateNumber> *root) noexcept
+{
+    if (root == nullptr)
+        return;
+    DestroyTree(root->left);
+    DestroyTree(root->right);
+    root->left = root->right = nullptr;
+    root->back = nullptr;
+    delete root;
+}
+//
 
