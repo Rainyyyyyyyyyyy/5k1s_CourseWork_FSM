@@ -21,8 +21,8 @@ public:
     static std::unique_ptr<FSM<M>> CreateFromBitsetAs_f2(
         const std::vector<typename FSM<M>::StateNumber>& g0,
         const std::vector<typename FSM<M>::StateNumber>& g1,
-        const std::bitset<M>& f0,
-        const std::bitset<M>& f1,
+        const std::bitset<FSM<M>::stateCount_>& f0,
+        const std::bitset<FSM<M>::stateCount_>& f1,
         typename FSM<M>::StateNumber initialState = 0,
         typename FSM<M>::StateNumber currentState = 0);
 
@@ -40,8 +40,8 @@ template <std::size_t M>
 std::unique_ptr<FSM<M>> FSMFactory::CreateFromBitsetAs_f2(
     const std::vector<typename FSM<M>::StateNumber>& g0,
     const std::vector<typename FSM<M>::StateNumber>& g1,
-    const std::bitset<M>& f0,
-    const std::bitset<M>& f1,
+    const std::bitset<FSM<M>::stateCount_>& f0,
+    const std::bitset<FSM<M>::stateCount_>& f1,
     typename FSM<M>::StateNumber initialState,
     typename FSM<M>::StateNumber currentState)
 {
