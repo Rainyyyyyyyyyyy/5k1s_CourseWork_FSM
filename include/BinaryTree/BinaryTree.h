@@ -185,7 +185,7 @@ void printTreeToFileDot(Node<T> *root, std::ofstream &out, std::string filename 
 
 
 
-
+/*
 class Tree
 {
 private:
@@ -214,3 +214,5 @@ public:
 
 // публичный безклассовый метод удаления дерева
 void DestroyTree(Node<FSM::StateNumber> *root) noexcept;
+
+*/

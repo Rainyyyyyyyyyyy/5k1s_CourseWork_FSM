@@ -1,5 +1,5 @@
 #include "BinaryTree.h"
-
+/*
 void Tree::GetLeaves(Node<FSM::StateNumber> *node, std::vector<FSM::StateNumber> &leaves) const
 {
     if (node == nullptr)
@@ -52,3 +52,4 @@ void DestroyTree(Node<FSM::StateNumber> *root) noexcept
 }
 //
 
+*/
