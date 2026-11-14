@@ -4,6 +4,11 @@
 #include <cstddef>
 #include <vector>
 #include <bitset>
+#include <algorithm>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+#include <string>
 
 #define MAX_M_SIZE_FOR_FSM (size_t)16
 #define MAX_MP_SIZE_FOR_FSM (size_t)1 << MAX_M_SIZE_FOR_FSM
@@ -27,12 +32,14 @@
  * индексация в bitset идёт справа налево, то было принятно решение при выводе "разворачивать" содержимое
  * этих bitset, но в остальной работе интерпретировать бит для i-го состояния как f2(•, i)
  */
+
 template <std::size_t M>
 class FSM
 {
 public:
     // номер состояния (код состояния) — целое число от 0 до 2^M - 1
     using StateNumber = std::size_t;
+    static constexpr StateNumber stateCount_ = static_cast<StateNumber>(1) << M;
 
     // вспомогательная структура для результата такта
     struct StepResult
@@ -42,34 +49,20 @@ public:
         const bool output;
     };
 
+    //
+
+    //
+
+    //
+
     /**
      * Создаёт автомат из полных таблиц функций.
      * Каждый из четырёх векторов обязан содержать M = 2^M элементов.
      * Все номера в g0 и g1 должны быть в диапазоне [0, N).
      */
     FSM(std::vector<StateNumber> g0, std::vector<StateNumber> g1,
-        std::bitset<M> f0, std::bitset<M> f1,
-        const StateNumber &initialState = 0,
-        const StateNumber &currentState = 0)
-        : g0_(g0), // g0_(std::move(g0)),
-          g1_(g1), // g1_(std::move(g1)),
-          f0_(f0), // f0_(std::move(f0)),
-          f1_(f1), // f1_(std::move(f1)),
-          initialState_(initialState),
-          currentState_(initialState)
-    {
-        if (g0_.size() != stateCount_ || g1_.size() != stateCount_)
-        {
-            throw std::invalid_argument("FSM: g0, g1, f0 and f1 must contain exactly 2^M elements");
-        }
-        if (initialState_ >= stateCount_)
-        {
-            throw std::invalid_argument("FSM: initial state is out of range");
-        }
-
-        validateTransitionTable(g0_);
-        validateTransitionTable(g1_);
-    }
+        std::bitset<stateCount_> f0, std::bitset<stateCount_> f1,
+        const StateNumber &initialState = 0, const StateNumber &currentState = 0);
 
     /*
      * Конструктор по строке (из-за особенности std::bitset -
@@ -77,38 +70,30 @@ public:
      */
     FSM(std::vector<StateNumber> g0, std::vector<StateNumber> g1,
         std::string f0, std::string f1,
-        const StateNumber &initialState = 0,
-        const StateNumber &currentState = 0)
-        : g0_(g0), // g0_(std::move(g0)),
-          g1_(g1), // g1_(std::move(g1)),
-          // f0_(f0),
-          // f1_(f1),
-          initialState_(initialState),
-          currentState_(initialState)
-    {
-        if (g0_.size() != stateCount_ || g1_.size() != stateCount_ ||
-            f0.size() != stateCount_ || f1.size() != stateCount_)
-        {
-            throw std::invalid_argument("FSM: g0, g1, f0 and f1 must contain exactly 2^M elements");
-        }
-        if (initialState_ >= stateCount_)
-        {
-            throw std::invalid_argument("FSM: initial state is out of range");
-        }
-        std::reverse(f0.begin(), f0.end());
-        std::reverse(f1.begin(), f1.end());
-        f0_ = std::bitset<M>(f0);
-        f1_ = std::bitset<M>(f1);
+        const StateNumber &initialState = 0, const StateNumber &currentState = 0);
 
-        validateTransitionTable(g0_);
-        validateTransitionTable(g1_);
-    }
+    // конструктор копирования для одинаковых M
+    FSM(const FSM<M> &s);
 
-    // конструктор копирования = delete
-    FSM(const FSM &) = delete;
+    // конструктор перемещения для одинаковых M
+    FSM(FSM<M> &&s) noexcept;
 
-    // конструктор перемещения = delete
-    FSM(FSM &&) = delete;
+    // FSM с разным количеством бит состояния нельзя преобразовать в этот FSM.
+    template <size_t M2>
+    FSM(const FSM<M2> &s) = delete;
+
+    // operator = для одинаковых M
+    FSM<M> &operator=(const FSM<M> &s);
+
+    // operator = для разных M тоже запрещаем
+    template <size_t M2>
+    FSM<M> &operator=(const FSM<M2> &s) = delete;
+
+    //
+
+    //
+
+    //
 
     /**
      * Выполняет такт для входного бита input.
@@ -117,13 +102,13 @@ public:
      */
     StepResult Step(const bool &input);
 
-    // не выводит результат, только меняет состояние currentState_
-    void StepFast(const bool &input)
+    // возвращает только бит z(t) и меняет состояние currentState_
+    const bool StepFast(const bool &input)
     {
-        const StateNumber previous = currentState_;
-
-        // input == false эквивалентен 0, input == true — 1.
-        currentState_ = input ? g1_[previous] : g0_[previous];
+        // input == false эквивалентен 0, input == true эквивалентен 1.
+        bool result = input ? f1_[currentState_] : f0_[currentState_];
+        currentState_ = input ? g1_[currentState_] : g0_[currentState_];
+        return result;
     }
 
     /** Обрабатывает входное слово и возвращает выходное слово той же длины. */
@@ -134,43 +119,61 @@ public:
      * Возвращает последовательность z(t) целиком.
      */
     template <size_t N>
-    std::bitset<M * N> MakeAllPeriodReturnZ(const std::bitset<N> &u); //(std::vector<FSM::Bit> u);
+    std::bitset<(static_cast<size_t>(1) << (N + M))> MakeAllPeriodReturnZ(const std::bitset<static_cast<size_t>(1) << N> &u); //(std::vector<FSM::Bit> u);
 
     /*   * ставит генератор в начальное состояние;
      * Вырабатывает z(t) и возвращает траекторию состояний
      */
     template <size_t N>
-    std::vector<typename FSM<M>::StateNumber> MakeAllPeriodReturnY(const std::bitset<N> &u); //(std::vector<FSM::Bit> u);
+    std::vector<typename FSM<M>::StateNumber> MakeAllPeriodReturnY(const std::bitset<static_cast<size_t>(1) << N> &u); //(std::vector<FSM::Bit> u);
+
+    /**
+     * Ставит генератор в начальное состояние;
+     * Вырабатывает z(t) и возвращает траекторию состояний y(t) и саму z(t).
+     */
+    template <size_t N>
+    std::pair<std::vector<typename FSM<M>::StateNumber>, std::bitset<(static_cast<size_t>(1) << (N + M))>> MakeAllPeriodReturnY_and_Z(const std::bitset<static_cast<size_t>(1) << N> &u);
+
+    //
+    
+    //
+    
+    //
 
     void reset() noexcept;
-    void output() const noexcept;
+    void output() const;
+
+    //
+
+    //
+
+    //
 
     inline const StateNumber &GetCurrentState() const noexcept { return currentState_; }
     inline const StateNumber &GetInitialState() const noexcept { return initialState_; }
     inline const std::vector<StateNumber> &Getg0() const noexcept { return g0_; }
     inline const std::vector<StateNumber> &Getg1() const noexcept { return g1_; }
-    inline const std::bitset<M> &Getf0() const noexcept { return f0_; }; // inline const std::bitset<MAX_MP_SIZE_FOR_FSM> /*std::vector<Bit>*/ &Getf0() const noexcept { return f0_; }
-    inline const std::bitset<M> &Getf1() const noexcept { return f1_; }; // inline const std::bitset<MAX_MP_SIZE_FOR_FSM> /*std::vector<Bit>*/ &Getf1() const noexcept { return f1_; }
+    inline const std::bitset<stateCount_> &Getf0() const noexcept { return f0_; };
+    inline const std::bitset<stateCount_> &Getf1() const noexcept { return f1_; };
 
     inline const bool Get_bit_from_state_by_input(const StateNumber &state, const bool &input) const noexcept;
     inline const StateNumber Get_nextState_from_state_by_input(const StateNumber &state, const bool &input) const noexcept;
     inline const bool Get_bit_from_currentState_by_input(const bool &input) const noexcept;
     inline const StateNumber Get_nextState_from_currentState_by_input(const bool &input) const noexcept;
 
-private:
-    static inline StateNumber getMP();
+    inline const size_t getMP(); // { return static_cast<size_t>(1) << M; } // 2^M
+    inline const size_t getM();  // { return M; } // M
 
+private:
     // проверка на то, что номера в table находятся в пределах [0, N), где N = 2^M
     // * но не проверяет на то, что это биекция (подстановка), то есть на повторение элементов
     void validateTransitionTable(const std::vector<StateNumber> &table) const;
 
-    // std::size_t m_;
-    // StateNumber stateCount_;
     std::vector<StateNumber> g0_;
     std::vector<StateNumber> g1_;
-    std::bitset<M> f0_; // std::bitset<MAX_MP_SIZE_FOR_FSM> f0_;   //std::vector<Bit> f0_;
-    std::bitset<M> f1_; // std::bitset<MAX_MP_SIZE_FOR_FSM> f1_;   //std::vector<Bit> f1_;
-    const StateNumber initialState_;
+    std::bitset<stateCount_> f0_;
+    std::bitset<stateCount_> f1_;
+    StateNumber initialState_;
     StateNumber currentState_;
 };
 
@@ -226,7 +229,7 @@ std::bitset<M * N> FSM<M>::ProcessWord(const std::bitset<N> &input) //(const std
 }
 
 template <size_t M>
-void FSM<M>::output() const noexcept
+void FSM<M>::output() const
 {
     // std::cout << '\t';
     for (std::size_t i = 0; i < stateCount_; ++i)
@@ -252,14 +255,16 @@ void FSM<M>::output() const noexcept
     ///
     ///
     std::cout << "0";
-    for (std::size_t i = stateCount_ - 1; i >= 0; --i)
+    // for (std::size_t i = stateCount_ - 1; i < stateCount_; --i)
+    for (std::size_t i = 0; i < stateCount_; ++i)
     {
         std::cout << '\t' << f0_[i];
     }
     std::cout << '\n';
 
     std::cout << "1";
-    for (std::size_t i = stateCount_ - 1; i >= 0; --i)
+    // for (std::size_t i = stateCount_ - 1; i < stateCount_; --i)
+    for (std::size_t i = 0; i < stateCount_; ++i)
     {
         std::cout << '\t' << f1_[i];
     }
@@ -268,7 +273,7 @@ void FSM<M>::output() const noexcept
 }
 
 template <size_t M>
-typename FSM<M>::StateNumber FSM<M>::getMP()
+inline const size_t FSM<M>::getMP()
 {
     constexpr std::size_t sizeBits = std::numeric_limits<StateNumber>::digits;
     if (M >= sizeBits || M > MAX_M_SIZE_FOR_FSM)
@@ -277,6 +282,18 @@ typename FSM<M>::StateNumber FSM<M>::getMP()
     }
 
     return static_cast<StateNumber>(1) << M;
+}
+
+template <size_t M>
+inline const size_t FSM<M>::getM()
+{
+    constexpr std::size_t sizeBits = std::numeric_limits<StateNumber>::digits;
+    if (M >= sizeBits || M > MAX_M_SIZE_FOR_FSM)
+    {
+        throw std::invalid_argument("FSM: M is too large to calculate 2^M");
+    }
+
+    return M;
 }
 
 template <size_t M>
@@ -297,20 +314,26 @@ void FSM<M>::validateTransitionTable(const std::vector<StateNumber> &table) cons
  */
 template <size_t M>
 template <size_t N>
-std::bitset<M * N> FSM<M>::MakeAllPeriodReturnZ(const std::bitset<N> &u) //(std::vector<FSM::Bit> u)
+std::bitset<(static_cast<size_t>(1) << (N + M))> FSM<M>::MakeAllPeriodReturnZ(const std::bitset<static_cast<size_t>(1) << N> &u) //(std::vector<FSM::Bit> u)
 {
-    size_t n_mask = N - 1; // 2^n - 1 = 001111 (n единиц) //u.size() - 1;
-    size_t m_mask = ((static_cast<size_t>(1)) << M) - 1;
-    std::bitset<M * N> z; // std::vector<FSM::Bit> z;
-    size_t MN = (static_cast<size_t>(1)) << (N + M);
-    z.reserve(MN);
+    static constexpr size_t NP = (static_cast<size_t>(1)) << N; // 2^n
+    static constexpr size_t MP = (static_cast<size_t>(1)) << M; // 2^M
+    static constexpr size_t n_mask = NP - 1;                    // u.size() - 1;
+    static constexpr size_t MNP = (static_cast<size_t>(1)) << (N + M);
+
+    // из-за особенности индкксирования std::bitset здесь идём
+    std::bitset<NP> reversed_u;
+    for (size_t j = 0; j < NP; ++j)
+    {
+        reversed_u[j] = u[NP - 1 - j];
+    }
 
     reset();
 
-    for (size_t i = 0; i < MN; i++)
+    std::bitset<MNP> z;
+    for (size_t i = 0; i < MNP; i++)
     {
-        z.set(i); // z.push_back(Get_bit_from_currentState_by_input(u[i & n_mask]));
-        StepFast(u[i & n_mask]);
+        z[i] = StepFast(reversed_u[i & n_mask]);
     }
 
     return z;
@@ -321,23 +344,60 @@ std::bitset<M * N> FSM<M>::MakeAllPeriodReturnZ(const std::bitset<N> &u) //(std:
  */
 template <size_t M>
 template <size_t N>
-std::vector<typename FSM<M>::StateNumber> FSM<M>::MakeAllPeriodReturnY(const std::bitset<N> &u)
+std::vector<typename FSM<M>::StateNumber> FSM<M>::MakeAllPeriodReturnY(const std::bitset<static_cast<size_t>(1) << N> &u)
 {
-    size_t n_mask = N - 1; // u.size() - 1;
+    static constexpr size_t NP = (static_cast<size_t>(1)) << N; // 2^n
+    static constexpr size_t MP = (static_cast<size_t>(1)) << M; // 2^M
+    static constexpr size_t n_mask = NP - 1;                    // u.size() - 1;
+    static constexpr size_t MNP = (static_cast<size_t>(1)) << (N + M);
     std::vector<typename FSM<M>::StateNumber> Y;
-    size_t MN = (static_cast<size_t>(1)) << (N + M);
-    Y.reserve(MN); // резервируем память, но size всё ещё 0
+    std::bitset<MNP> z;
+    Y.reserve(MNP); // резервируем память, но size всё ещё 0
+    reset();
+
+    // из-за особенности индкксирования std::bitset здесь идём
+    std::bitset<NP> reversed_u;
+    for (size_t j = 0; j < NP; ++j)
+    {
+        reversed_u[j] = u[NP - 1 - j];
+    }
+
+    for (size_t i = 0; i < MNP; i++)
+    {
+        // Y.push_back(Get_nextState_from_currentState_by_input(u[i & n_mask]));
+        StepFast(reversed_u[i & n_mask]);
+        Y.push_back(currentState_);
+    }
+    return Y;
+}
+
+/**
+ * Ставит генератор в начальное состояние;
+ * Вырабатывает z(t) и возвращает траекторию состояний y(t) и саму z(t).
+ */
+template <size_t M>
+template <size_t N>
+std::pair<std::vector<typename FSM<M>::StateNumber>, std::bitset<(static_cast<size_t>(1) << (N + M))>> FSM<M>::MakeAllPeriodReturnY_and_Z(const std::bitset<static_cast<size_t>(1) << N> &u)
+{
+    static constexpr size_t NP = (static_cast<size_t>(1)) << N; // 2^n
+    static constexpr size_t MP = (static_cast<size_t>(1)) << M; // 2^M
+    static constexpr size_t n_mask = NP - 1;                    // u.size() - 1;
+    static constexpr size_t MNP = (static_cast<size_t>(1)) << (N + M);
+
+    std::vector<typename FSM<M>::StateNumber> Y;
+    std::bitset<MNP> z;
+    Y.reserve(MNP); // резервируем память, но size всё ещё 0
 
     reset();
 
-    for (size_t i = 0; i < MN; i++)
+    for (size_t i = 0; i < MNP; i++)
     {
         // Y.push_back(Get_nextState_from_currentState_by_input(u[i & n_mask]));
-        StepFast(u[i & n_mask]);
+        z[i] = StepFast(u[i & n_mask]);
         Y.push_back(currentState_);
     }
 
-    return Y;
+    return {Y, z};
 }
 
 // геттер : f2(input, state)
@@ -366,6 +426,103 @@ template <size_t M>
 inline const typename FSM<M>::StateNumber FSM<M>::Get_nextState_from_currentState_by_input(const bool &input) const noexcept
 {
     return input ? g1_[currentState_] : g0_[currentState_];
+}
+
+// конструктор копирования
+template <size_t M>
+FSM<M>::FSM(const FSM<M> &s)
+{
+    this->currentState_ = s.currentState_;
+    this->initialState_ = s.initialState_;
+    this->g0_ = s.g0_;
+    this->g1_ = s.g1_;
+    this->f0_ = s.f0_;
+    this->f1_ = s.f1_;
+}
+
+// конструктор перемещения
+template <size_t M>
+FSM<M>::FSM(FSM<M> &&s) noexcept
+{
+    this->currentState_ = s.currentState_;
+    this->initialState_ = s.initialState_;
+    this->g0_ = std::move(s.g0_);
+    this->g1_ = std::move(s.g1_);
+    this->f0_ = std::move(s.f0_);
+    this->f1_ = std::move(s.f1_);
+}
+
+// operator = для одинаковых M
+template <size_t M>
+FSM<M> &FSM<M>::operator=(const FSM<M> &s)
+{
+    if (this == &s)
+        return *this;
+    this->initialState_ = s.initialState_;
+    this->currentState_ = s.currentState_;
+    this->g0_ = s.g0_;
+    this->g1_ = s.g1_;
+    this->f0_ = s.f0_;
+    this->f1_ = s.f1_;
+    return *this;
+}
+template<size_t M>
+FSM<M>::FSM(std::vector<typename FSM<M>::StateNumber> g0, std::vector<typename FSM<M>::StateNumber> g1,
+    std::bitset<stateCount_> f0, std::bitset<stateCount_> f1,
+    const typename FSM<M>::StateNumber &initialState = 0,
+    const typename FSM<M>::StateNumber &currentState = 0)
+    : g0_(g0), // g0_(std::move(g0)),
+      g1_(g1), // g1_(std::move(g1)),
+      f0_(f0), // f0_(std::move(f0)),
+      f1_(f1), // f1_(std::move(f1)),
+      initialState_(initialState),
+      currentState_(initialState)
+{
+    if (g0_.size() != stateCount_ || g1_.size() != stateCount_)
+    {
+        throw std::invalid_argument("FSM: g0, g1, f0 and f1 must contain exactly 2^M elements");
+    }
+    if (initialState_ >= stateCount_)
+    {
+        throw std::invalid_argument("FSM: initial state is out of range");
+    }
+
+    validateTransitionTable(g0_);
+    validateTransitionTable(g1_);
+}
+
+/*
+ * Конструктор по строке (из-за особенности std::bitset -
+ * в результате f2(1) и f2(0) будут записаны в обратном порядке)
+ */
+template<size_t M>
+FSM<M>::FSM(std::vector<typename FSM<M>::StateNumber> g0, std::vector<typename FSM<M>::StateNumber> g1,
+    std::string f0, std::string f1,
+    const typename FSM<M>::StateNumber &initialState = 0,
+    const typename FSM<M>::StateNumber &currentState = 0)
+    : g0_(g0), // g0_(std::move(g0)),
+      g1_(g1), // g1_(std::move(g1)),
+      // f0_(f0),
+      // f1_(f1),
+      initialState_(initialState),
+      currentState_(initialState)
+{
+    if (g0_.size() != stateCount_ || g1_.size() != stateCount_ ||
+        f0.size() != stateCount_ || f1.size() != stateCount_)
+    {
+        throw std::invalid_argument("FSM: g0, g1, f0 and f1 must contain exactly 2^M elements");
+    }
+    if (initialState_ >= stateCount_)
+    {
+        throw std::invalid_argument("FSM: initial state is out of range");
+    }
+    std::reverse(f0.begin(), f0.end());
+    std::reverse(f1.begin(), f1.end());
+    f0_ = std::bitset<stateCount_>(f0);
+    f1_ = std::bitset<stateCount_>(f1);
+
+    validateTransitionTable(g0_);
+    validateTransitionTable(g1_);
 }
 
 #endif // FSM_H

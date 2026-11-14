@@ -10,12 +10,15 @@
 #include <bitset>
 
 #include "MultiTree.h"
+#include "FSMFactory.h"
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#include <chrono>
 
-using Bit = FSM::Bit;
+
+
 
 int main()
 {
@@ -24,13 +27,20 @@ int main()
 #endif
 
 
+
     size_t n, nP, m, mP, MN; //, MNP;
+    // размер n=m=4
+    size_t m4 = 4;
+    size_t mP4 = (size_t)1 << m4;
+    size_t n4 = 4;
+    size_t nP4 = (size_t)1 << n4;
+    size_t MN44 = (size_t)1 << (n4 + m4);
 
     // размер m=n=3
     size_t m3 = 3;
     size_t mP3 = (size_t)1 << m3;
     size_t n3 = 3;
-    size_t nP3 = (size_t)1 << 3;
+    size_t nP3 = (size_t)1 << n3;
     size_t MN33 = (size_t)1 << (n3 + m3);
 
     // размер m=n=2
@@ -47,72 +57,94 @@ int main()
     size_t nP1 = (size_t)1 << 1;
     size_t MN11 = (size_t)1 << (n1 + m1);
 
+    // n = 6
+    size_t n6 = 6;
     //
     // АКТУАЛЬНЫЕ ПАРАМЕТРЫ (ТЕКУЩИЕ)
     //
-    n = n3;
-    nP = nP3;
-    m = m3;
-    mP = mP3;
-    MN = MN33; // MNP = MNP22;
+    n = n6;
+    nP = 1<<n;;
+    m = m4;
+    mP = 1<<m;
+    //MN = MN22; // MNP = MNP22;
 
-    //          0 1 2 3 4 5 6 7
-    Permut g20({2,4,1,6,3,7,5,0});//{3,4,5,6,7,0,1,2});
-    size_t deg = 4;
-    Permut g21 = g20 ^ deg;
+    //          0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+    Permut g21({1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15}); //{0,1,2,3,4,5,6,7});//{3,2,0,1});//({2,3,1,7,5,0,4,6});//{0,3,1,2});//{2,0,3,1});//{2,4,1,6,3,7,5,0});//{3,4,5,6,7,0,1,2});
+    size_t deg = 6;
+    //          0,1, 2,3,4, 5, 6,7,8,9,10,11,12,13,14,15
+    Permut g20({3,6,12,7,5,15,14,2,1,8, 9,10, 4,11,13,0});
+            // (0 3 7 2 12 4 5 15) (1 6 14 13 11 10 9 8)
     // g20.Print();
     // g21.Print();
     // return 0;
-    FSM fsm33(m3,   // f20, f21 указывать в обратном порядке (f(yN), f(yN-1), ..., f(y1), f(y0) из-за индексации std::bitset
-    /*g20*/         g20.Get(),//{3,4,5,6,7,0,1,2},//{3,2,7,1,5,0,4,6},//{6,7,0,2,1,3,4,5}, //, 8, 9, 10, 11, 12, 13, 14, 15},
-    /*g21*/         g21.Get(),//{6,7,0,1,2,3,4,5},//{7,4,5,6,1,2,3,0},//{7,2,1,4,3,6,5,0},     //{4,5,6,0,7,2,1,3}, //{4,5,6,0,7,2,1,3},// 8, 9, 10, 11, 12, 13, 14, 15},
-    /*f20*/         "00000001",                   //{1, 0, 0, 0, 0, 0, 0, 1},// 1, 1, 0, 0, 0, 1, 1, 1},
-    /*f21*/         "01011001");                  //{1, 0, 0, 0, 0, 0, 1, 1});// 1, 1, 1, 1, 1, 1, 1, 1});
-    // FSM fsm11(m1, g20.Get(),
-    //               g21.Get(),
-    //               "10",
-    //               "00");
+    // if(start_state >= g20.GetSize()){
+    //     throw std::invalid_argument("start state is incorrect!\n Shutting down...\n");
+    // }
+
+    FSM<4> fsm34(g20.Get(), g21.Get(),
+                "0000111110000000", //"1110001110001110",
+                "1111011011001111"); //"0101111111001001",0);
+
+    auto current_fsm = fsm34;
     std::cout << "created fsm\n";
-    fsm33.output();
-    FSM fsm22(2, {1, 2, 3, 0},
-              {2, 3, 0, 1},
-              "1000",
-              "1100");
+    current_fsm.output();
+    // FSM fsm22(2, {1, 2, 3, 0},
+    //           {2, 3, 0, 1},
+    //           "1000",
+    //           "1100");
 
-    FSM fsm1(1, {1, 0}, {0, 1}, "10", "11");
+    // FSM fsm1(1, {1, 0}, {0, 1}, "10", "11");
 
-    std::vector<Bit> u3 = {0, 0, 0, 0, 0, 1, 1, 1}; //{0,1,1,1};
-    std::vector<Bit> u2 = {0, 1, 1, 1};
-    std::vector<Bit> u1 = {1, 0};
+    std::bitset< 1<<1 > u1("01");  
+    std::bitset< 1<<2 > u2("0001");  
+    std::bitset< 1<<3 > u3("00000001");  
+    std::bitset< 1<<4 > u4("0000000000000001");
+    std::bitset< 1<<5 > u5("00000000000000000000000000000001");  
+    std::bitset< 1<<6 > u6("0000000000000000000000000000000000000000000000000000000000000001");
+    auto current_u = u5;
     // fsm33.output();
     //fsm22.output();
+    Permut Composition_Gu = (current_u[0] == 0) ? current_fsm.Getg0() : current_fsm.Getg1();
+    // std::cout<<"current_u["<<0<<"] = "<<current_u[0]<<'\n';
+    //     std::cout<<"Composition Gu: \n";
+    //     Composition_Gu.Print();
+    for(size_t i=1; i<current_u.size(); i++){
+        Composition_Gu *= (current_u[i]==0) ? current_fsm.Getg0() : current_fsm.Getg1();
+        // std::cout<<"current_u["<<i<<"] = "<<current_u[i]<<'\n';
+        // std::cout<<"Composition Gu: \n";
+        // Composition_Gu.Print();
+    }
+
+    std::cout<<"Composition Gu: \n";
+    Composition_Gu.Print();
+
 
     std::vector<Bit> z; // = fsm1.ProcessWord(u);
     std::vector<FSM::StateNumber> Y;
-    z = fsm33.MakeAllPeriodReturnZ(u3);
-    Y = fsm33.MakeAllPeriodReturnY(u3);
+    z = current_fsm.MakeAllPeriodReturnZ(current_u);
+    Y = current_fsm.MakeAllPeriodReturnY(current_u);
 
 
 
     ///
     /// Вывод в консоль матриц-траекторий выходов z(t) и состояний y(t)
     ///
-    for (size_t i = 0; i < nP; i++)std::cout << u3[i] << " ";   std::cout << '\n';
-    for (size_t i = 0; i < mP; i++)std::cout << "- ";           std::cout << '\n';
+    for (size_t i = 0; i < nP; i++)std::cout << current_u[i] << '\t';   std::cout << '\n';
+    for (size_t i = 0; i < mP; i++)std::cout << "-\t";           std::cout << '\n';
     for (size_t i = 0; i < mP; ++i)
     {
         for (size_t j = 0; j < nP; ++j)
         {
-            std::cout << z[i * nP + j] << ' ';//'/'<<Y[i * nP + j]<<' ';
+            std::cout << z[i * nP + j] << '\t';//'/'<<Y[i * nP + j]<<' ';
         }
         std::cout << '\n';
     }
-    for (size_t i = 0; i < mP; i++) std::cout << "- ";           std::cout << '\n';
+    for (size_t i = 0; i < mP; i++) std::cout << "-\t";           std::cout << '\n';
     for (size_t i = 0; i < mP; ++i)
     {
         for (size_t j = 0; j < nP; ++j)
         {
-            std::cout << Y[i * nP + j] << ' ';
+            std::cout << Y[i * nP + j] << '\t';
         }
         std::cout << '\n';
     }
@@ -125,8 +157,11 @@ int main()
     root->left = root->right = nullptr;
     root->back = nullptr;
 
-    Reverse_first_2powN_To_BinaryTree(fsm33.Getg0(), fsm33.Getg1(),
-                                      fsm33.Getf0(), fsm33.Getf1(),
+
+
+
+    Reverse_first_2powN_To_BinaryTree(current_fsm.Getg0(), current_fsm.Getg1(),
+                                      current_fsm.Getf0(), current_fsm.Getf1(),
                                       z, n, m,
                                       root->state, root);
 
@@ -149,8 +184,8 @@ int main()
     std::vector<FSM::Bit> currentU;
 
     Reverse_first_2powN_To_MultiTree(
-        fsm33.Getg0(), fsm33.Getg1(),
-        fsm33.Getf0(), fsm33.Getf1(),
+        current_fsm.Getg0(), current_fsm.Getg1(),
+        current_fsm.Getf0(), current_fsm.Getf1(),
         z, n, m,
         rootMulti, floors, rootMulti,
         lastStates, candidatesU, currentU);
@@ -166,8 +201,8 @@ int main()
     std::cout<<'\n';
 
     size_t d = CheckCandidatesY_by_z(lastStates, candidatesU, z,
-                         fsm33.Getg0(), fsm33.Getg1(),
-                         fsm33.Getf0(), fsm33.Getf1(),
+                         current_fsm.Getg0(), current_fsm.Getg1(),
+                         current_fsm.Getf0(), current_fsm.Getf1(),
                          n, m);
     std::cout<<"d = "<<d<<'\n';
     std::cout<<"True u(t): ";

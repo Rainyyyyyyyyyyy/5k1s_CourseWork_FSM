@@ -8,17 +8,17 @@
 // output записан слева направо
 // но f20, f21 - записаны справа налево (из-за bitset)
 // решение для скорости - подавать сюда изначально развёрнутые f20, f21
-// .... Строится двоичное дерево, где каждый узел имеет один ключ и до дву потомков
-void Reverse_first_2powN_To_BinaryTree(const std::vector<FSM::StateNumber> &g20,
-                                       const std::vector<FSM::StateNumber> &g21,
-                                       const std::bitset<MAX_MP_SIZE_FOR_FSM> &f20,
-                                       const std::bitset<MAX_MP_SIZE_FOR_FSM> &f21,
-                                       // const std::vector<FSM::Bit> &f20,
-                                       // const std::vector<FSM::Bit> &f21,
-                                       const std::vector<FSM::Bit> &output,
-                                       const size_t &N, const size_t &M,
-                                       size_t &newState,
-                                       Node<FSM::StateNumber> *node, size_t i = 0)
+// .... Строится двоичное дерево, где каждый узел имеет один ключ и до двуx потомков
+// M - параметр размера для автомата А2 (кол-во состояний 2^M)
+// N - параметр размера для автомата А1 (длина u(t) = 2^N)
+template<size_t M, size_t N>
+void Reverse_first_2powN_To_BinaryTree(const std::vector<typename FSM<M>::StateNumber> &g20,
+                                       const std::vector<typename FSM<M>::StateNumber> &g21,
+                                       const std::bitset<static_cast<size_t>(1) << M> &f20,
+                                       const std::bitset<static_cast<size_t>(1) << M> &f21,
+                                       const std::bitset<static_cast<size_t>(1) << (M+N)> &output,
+                                       typename FSM<M>::StateNumber &newState,
+                                       Node<typename FSM<M>::StateNumber> *node, size_t i = 0)
 {
     if (node == nullptr)
         return;
@@ -76,22 +76,24 @@ void Reverse_first_2powN_To_BinaryTree(const std::vector<FSM::StateNumber> &g20,
 // но f20, f21 - записаны справа налево (из-за bitset)
 // решение для скорости - подавать сюда изначально развёрнутые f20, f21
 // .... Строится многопутевое дерево, где узле имеет один ключ и мн-во потомков
-void Reverse_first_2powN_To_MultiTree(const std::vector<FSM::StateNumber> &g20,
-                                      const std::vector<FSM::StateNumber> &g21,
-                                      const std::bitset<MAX_MP_SIZE_FOR_FSM> &f20,
-                                      const std::bitset<MAX_MP_SIZE_FOR_FSM> &f21,
-                                      const std::vector<FSM::Bit> &output,
-                                      const size_t &N, const size_t &M,
+// M - параметр размера для автомата А2 (кол-во состояний 2^M)
+// N - параметр размера для автомата А1 (длина u(t) = 2^N)
+template<size_t M, size_t N>
+void Reverse_first_2powN_To_MultiTree(const std::vector<typename FSM<M>::StateNumber> &g20,
+                                      const std::vector<typename FSM<M>::StateNumber> &g21,
+                                      const std::bitset<static_cast<size_t>(1) << M> &f20,
+                                      const std::bitset<static_cast<size_t>(1) << M> &f21,
+                                      const std::bitset<static_cast<size_t>(1)<<(M+N)> &output,
                                       MultiTreeNode8 *&root,
                                       MultiTreeFloors &floors,
                                       MultiTreeNode8 *node,
-                                      std::vector<FSM::StateNumber> &LastStates,
-                                      std::vector<std::vector<FSM::Bit>> &candidates_u,
-                                      std::vector<FSM::Bit> &current_u,
+                                      std::vector<typename FSM<M>::StateNumber> &LastStates,
+                                      std::vector<std::bitset<static_cast<size_t>(1)<<N>> &candidates_u,
+                                      const std::bitset<static_cast<size_t>(1)<<N> &current_u,
                                       size_t i = 0,
                                       bool chet = false)
 {
-    (void)M;
+    //(void)M;
 
     if (node == nullptr)
         return;
@@ -218,14 +220,17 @@ void Swap(T &a, T &b)
 //--------------------
 // start_y_is_correct == true |=> возвращаем расстояние единственности d, если сократили мн-во кандидатов до 1
 // start_y_is_correct == false |=> возвращаем расстояние единственности d, если сократили мн-во кандидатов до 0
-size_t CheckCandidatesY_by_z(std::vector<FSM::StateNumber> &States,
-                            std::vector<std::vector<FSM::Bit>> &candidates_u,
-                            const std::vector<FSM::Bit> &output,
-                            const std::vector<FSM::StateNumber> &g20,
-                            const std::vector<FSM::StateNumber> &g21,
-                            const std::bitset<MAX_MP_SIZE_FOR_FSM> &f20,
-                            const std::bitset<MAX_MP_SIZE_FOR_FSM> &f21,
-                            const size_t &n, const size_t &m, bool start_y_is_correct = true)
+// M - параметр размера для автомата А2 (кол-во состояний 2^M)
+// N - параметр размера для автомата А1 (длина u(t) = 2^N)
+template<size_t M, size_t N>
+size_t CheckCandidatesY_by_z(std::vector<typename FSM<M>::StateNumber> &States,
+                            std::vector<std::bitset<static_cast<size_t>(1)<<N>> &candidates_u,
+                            std::bitset<static_cast<size_t>(1)<<(M+N)>, //const std::vector<FSM::Bit> &output,
+                            const std::vector<typename FSM<M>::StateNumber> &g20,
+                            const std::vector<typename FSM<M>::StateNumber> &g21,
+                            const std::bitset<static_cast<size_t>(1)<<M> &f20,
+                            const std::bitset<static_cast<size_t>(1)<<M> &f21,
+                            bool start_y_is_correct = true)
 {
     size_t d = (size_t)1 << n; // расстояние единственности
     static const size_t nP = (size_t)1 << n;
