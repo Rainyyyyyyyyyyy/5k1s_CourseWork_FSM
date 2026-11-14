@@ -21,34 +21,57 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${FSM_MAIN_SOURCE}")
         "FSM_MAIN_SOURCE does not exist: ${CMAKE_CURRENT_SOURCE_DIR}/${FSM_MAIN_SOURCE}")
 endif()
 
+add_subdirectory(include/Permutation)
+add_subdirectory(include/BinaryTree)
+add_subdirectory(include/Multi_Tree)
+
 # Библиотека проекта.
 #
 # FSM.cpp сейчас пустой, а FSM и FSMFactory являются header-only шаблонными
 # компонентами, поэтому их .h-файлы не нужно компилировать отдельно.
 #
-# PermutationMain.cpp намеренно не включён: он содержит собственный main().
-add_library(FSMlib
-    include/Reverse.cpp
-    include/Permutation/Permutation.cpp
-    include/BinaryTree/BinaryTree.cpp
-    include/Multi_Tree/MultiTree.cpp
-)
+# FSMlib объединяет header-only код FSM/Reverse и зависимости деревьев.
+add_library(FSMlib INTERFACE)
 
-target_include_directories(FSMlib PUBLIC
+target_include_directories(FSMlib INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/BinaryTree
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/Permutation
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/Multi_Tree
     ${CMAKE_CURRENT_SOURCE_DIR}/include/FSMFactory
+)
+target_link_libraries(FSMlib INTERFACE
+    BinaryTree
+    MultiTree
 )
 
 # Основное приложение. Для выбора d_statistics используйте FSM_MAIN_SOURCE
 # из блока выше; одновременно собирается только один файл с main().
 add_executable(FSM ${FSM_MAIN_SOURCE})
-target_link_libraries(FSM PRIVATE FSMlib)
+target_link_libraries(FSM PRIVATE
+    FSMlib
+    Permutation
+)
 
 target_include_directories(FSM PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/lib
+)
+
+# FSMFactoryTests - тесты для FSMFactory, которые проверяют корректность
+# работы фабрики FSM<M>
+add_executable(FSMFactoryTests
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/FSMFactory/FSM_with_factory_tests.cpp
+)
+target_include_directories(FSMFactoryTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Проверка критерия CriteriaGu от 27.10.2026
+add_executable(CheckCryteriaGu
+    CheckCryteriaGu/check1.cpp
+)
+target_link_libraries(CheckCryteriaGu PRIVATE
+    Permutation
+)
+target_include_directories(CheckCryteriaGu PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 set_target_properties(FSM PROPERTIES

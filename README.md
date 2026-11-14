@@ -6,6 +6,11 @@
 - ``` cmake --build build --config Release ```  
 - ``` build\Release\FSM.exe ```  
   
+### Тест FSMFactory
+
+- ``` cmake --build build --config Release --target FSMFactoryTests ```
+- ``` build\Release\FSMFactoryTests.exe ```
+  
   
 # tree.dot  
 Метод ``` printTreeFileDot(Node<T> *root, std::ofstream &out) ``` создаёт файл ```tree.dot``` в папку вместе с ```main.cpp```.  
